@@ -24,6 +24,9 @@ motor_l = Motor(Port.D)
 motor_m = Motor(Port.B)
 motor_b = Motor(Port.A)    
 
+#Дальше бога нет
+#Есть только много МНОГОФУНКЦИОНАЛЬНЫХ функций для езды 
+
 def PD_reg(Kp, Kd, Speed):
     global Err_old
     global timer_
@@ -59,18 +62,22 @@ def PD_line_f_n(Kp, Kd, Speed, line):
     motor_r.run(Speed)
     wait(200)
 
-def PD_line_f(Kp, Kd, Speed, line, move):
-    while color_l.reflection() >= line and color_r.reflection() >= line:
-        PD_reg(Kp, Kd, Speed)
-    motor_l.stop()
-    motor_r.stop()
-    motor_l.run_angle(-400, move, wait=False)
-    motor_r.run_angle(400, move)
+def PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move):
+    PD_line_X(Kp, Kd, Speed, line)
+    motor_l.run_angle(-1 * Speed_t, move, wait=False)
+    motor_r.run_angle(Speed_t, move)
     motor_l.stop()
     motor_r.stop()
 
-def PD_line_l(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
-    PD_line_f(Kp, Kd, Speed, line, move_f)
+def PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move):
+    PD_line_T(Kp, Kd, Speed, line)
+    motor_l.run_angle(-1 * Speed_t, move, wait=False)
+    motor_r.run_angle(Speed_t, move)
+    motor_l.stop()
+    motor_r.stop()
+
+def PD_line_l_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(Speed_t, move_t, then=Stop.COAST)
     while color_r.reflection() >= line_m:
@@ -84,8 +91,38 @@ def PD_line_l(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, cor
     motor_l.hold()
     motor_r.hold()
 
-def PD_line_r(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
-    PD_line_f(Kp, Kd, Speed, line, move_f)
+def PD_line_l_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move_f)
+    motor_l.run_angle(Speed_t, move_t, then=Stop.COAST, wait=False)
+    motor_r.run_angle(Speed_t, move_t, then=Stop.COAST)
+    while color_r.reflection() >= line_m:
+        motor_l.run(Speed_t)
+        motor_r.run(Speed_t)
+    motor_l.brake()
+    motor_r.brake()  
+    while color_l.reflection() >= line_m + correct:
+        motor_l.run(-1 * (Speed_t + correct_t)
+        motor_r.run(-1 * (Speed_t + correct_t)
+    motor_l.hold()
+    motor_r.hold()
+
+def PD_line_r_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move_f)
+    motor_l.run_angle(-1 * Speed_t, move_t, then=Stop.COAST, wait=False)
+    motor_r.run_angle(-1 * Speed_t, move_t, then=Stop.COAST)
+    while color_l.reflection() >= line_m:
+        motor_l.run(-1 * Speed_t)
+        motor_r.run(-1 * Speed_t)
+    motor_l.brake()
+    motor_r.brake()
+    while color_r.reflection() >= line_m + correct:
+        motor_l.run(Speed_t + correct_t)
+        motor_r.run(Speed_t + correct_t)
+    motor_l.hold()
+    motor_r.hold() 
+
+def PD_line_r_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(-1 * Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(-1 * Speed_t, move_t, then=Stop.COAST)
     while color_l.reflection() >= line_m:
@@ -147,10 +184,8 @@ Move(300, 0, 330, 0)
 #Бутылки взяты
 PD_time(2, 1.2, 400, 0.5)
 ev3.speaker.beep()
-PD_line_r(2, 1.2, 400, 35, 20, 125, 40)
-motor_r.stop()
-motor_l.stop()
-wait(5000)
+PD_line_r_x(2, 1.2, 400, 300, 35, 20, 125, 110, 40, -50)    #Саша, есть предположение, что я переборщил с количеством параметров...
+
 """
 Move(-300, -300, 90, 90)
 Move(200, -200, 205, 205)
