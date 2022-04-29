@@ -69,33 +69,33 @@ def PD_line_f(Kp, Kd, Speed, line, move):
     motor_l.stop()
     motor_r.stop()
 
-def PD_line_l(Kp, Kd, Speed, line, line_m, move, correct):
-    PD_line_f(Kp, Kd, Speed, line, move)
-    motor_l.run_angle(400, 100, then=Stop.COAST, wait=False)
-    motor_r.run_angle(400, 100, then=Stop.COAST)
+def PD_line_l(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f(Kp, Kd, Speed, line, move_f)
+    motor_l.run_angle(Speed_t, move_t, then=Stop.COAST, wait=False)
+    motor_r.run_angle(Speed_t, move_t, then=Stop.COAST)
     while color_r.reflection() >= line_m:
-        motor_l.run(400)
-        motor_r.run(400)
+        motor_l.run(Speed_t)
+        motor_r.run(Speed_t)
     motor_l.brake()
     motor_r.brake()  
     while color_l.reflection() >= line_m+correct:
-        motor_l.run(-200)
-        motor_r.run(-200)
+        motor_l.run(-1 * (Speed_t + correct_t)
+        motor_r.run(-1 * (Speed_t + correct_t)
     motor_l.hold()
     motor_r.hold()
 
-def PD_line_r(Kp, Kd, Speed, line, line_m, move, correct):
-    PD_line_f(Kp, Kd, Speed, line, move)
-    motor_l.run_angle(-400, 100, then=Stop.COAST, wait=False)
-    motor_r.run_angle(-400, 100, then=Stop.COAST)
+def PD_line_r(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+    PD_line_f(Kp, Kd, Speed, line, move_f)
+    motor_l.run_angle(-1 * Speed_t, move_t, then=Stop.COAST, wait=False)
+    motor_r.run_angle(-1 * Speed_t, move_t, then=Stop.COAST)
     while color_l.reflection() >= line_m:
-        motor_l.run(-300)
-        motor_r.run(-300)
+        motor_l.run(-1 * Speed_t)
+        motor_r.run(-1 * Speed_t)
     motor_l.brake()
     motor_r.brake()
     while color_r.reflection() >= line_m+correct:
-        motor_l.run(200)
-        motor_r.run(200)
+        motor_l.run(Speed_t + correct_t)
+        motor_r.run(Speed_t + correct_t)
     motor_l.hold()
     motor_r.hold()  
 
@@ -113,7 +113,7 @@ def Move(Speedl, Speedr, anglel, angler):
         motor_r.run(Speedr*flag_r)
 
 
-#PD_line_l(2, 1.2, 400, 27, 30, 105, 50)
+#PD_line_l(2, 1.2, 400, 350, 27, 30, 105, 150, 50, -50)
 
 #(2, 2, 960, 0, 0) - max speed
 #(1.7, 1.2, 400, 0, 0) - normal speed
