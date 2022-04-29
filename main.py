@@ -12,6 +12,7 @@ import time
 ev3 = EV3Brick()
 
 Err_old = 0
+timer_ = time.time()
 
 color_r = ColorSensor(Port.S3)
 color_l = ColorSensor(Port.S4)
@@ -25,11 +26,13 @@ motor_b = Motor(Port.A)
 
 def PD_reg(Kp, Kd, Speed):
     global Err_old
+    global timer_
     Err = color_l.reflection() - color_r.reflection()
     motor_l.run(-1 * (Speed + (Kp * Err + Kd * (Err - Err_old))))
     motor_r.run(Speed - (Kp * Err + Kd * (Err - Err_old)))
-    Err_old = Err
-    wait(50)
+    if (time.time() - timer_) > 0.05:
+        timer_ = time.time()
+        Err_old = Err
 
 def PD_time(Kp, Kd, Speed, Time):
     timing = time.time()
