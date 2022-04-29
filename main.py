@@ -78,7 +78,7 @@ def PD_line_l(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, cor
         motor_r.run(Speed_t)
     motor_l.brake()
     motor_r.brake()  
-    while color_l.reflection() >= line_m+correct:
+    while color_l.reflection() >= line_m + correct:
         motor_l.run(-1 * (Speed_t + correct_t)
         motor_r.run(-1 * (Speed_t + correct_t)
     motor_l.hold()
@@ -93,7 +93,7 @@ def PD_line_r(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, cor
         motor_r.run(-1 * Speed_t)
     motor_l.brake()
     motor_r.brake()
-    while color_r.reflection() >= line_m+correct:
+    while color_r.reflection() >= line_m + correct:
         motor_l.run(Speed_t + correct_t)
         motor_r.run(Speed_t + correct_t)
     motor_l.hold()
