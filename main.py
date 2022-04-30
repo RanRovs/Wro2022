@@ -8,11 +8,17 @@ from pybricks.tools import wait, StopWatch, DataLog
 from pybricks.robotics import DriveBase
 from pybricks.media.ev3dev import SoundFile, ImageFile
 import time
+import threading
 
 ev3 = EV3Brick()
 
-Err_old = 0
-timer_ = time.time()
+#Переменные
+Err_old = 0             #ПД-регулятор
+timer_ = time.time()    #ПД-регулятор
+Thread_ = False         #Флаг для отключения параллельного считывания (Лож - работает/ Истина - не работает)
+left_array = []         #Список обнаруженных цветов ЛЕВЫМ датчиком
+right_array = []        #Список обнаруженных цветов ПРАВЫМ датчиком
+sum_ = None             #Направление (Лево или Право)((0, 1, 2 или 3))
 
 color_r = ColorSensor(Port.S3)
 color_l = ColorSensor(Port.S4)
@@ -27,7 +33,7 @@ motor_b = Motor(Port.A)
 #Дальше бога нет
 #Есть только много МНОГОФУНКЦИОНАЛЬНЫХ функций для езды 
 
-def PD_reg(Kp, Kd, Speed):
+def PD_reg(Kp, Kd, Speed): #ПД-регулятор
     global Err_old
     global timer_
     Err = color_l.reflection() - color_r.reflection()
@@ -37,24 +43,24 @@ def PD_reg(Kp, Kd, Speed):
         timer_ = time.time()
         Err_old = Err
 
-def PD_time(Kp, Kd, Speed, Time):
+def PD_time(Kp, Kd, Speed, Time): #ПД-регулятор, который работает указанное время
     timing = time.time()
     while time.time() - timing < Time:
         PD_reg(Kp, Kd, Speed)
 
-def PD_line_X(Kp, Kd, Speed, line):
+def PD_line_X(Kp, Kd, Speed, line): #Езда до Х-образной линии (or)
     while color_l.reflection() >= line or color_r.reflection() >= line:
         PD_reg(Kp, Kd, Speed)
     motor_l.hold()
     motor_r.hold()
 
-def PD_line_T(Kp, Kd, Speed, line):
+def PD_line_T(Kp, Kd, Speed, line): #Езда до Т-образной линии (and)
     while color_l.reflection() >= line and color_r.reflection() >= line:
         PD_reg(Kp, Kd, Speed)
     motor_l.brake()
     motor_r.brake()
 
-def PD_line_f_n(Kp, Kd, Speed, line):
+def PD_line_f_n(Kp, Kd, Speed, line): #Езда до Т-образной линии с проездом вперед без остановки после 
     while color_l.reflection() >= line and color_r.reflection() >= line:
         PD_reg(Kp, Kd, Speed)
     
@@ -62,21 +68,21 @@ def PD_line_f_n(Kp, Kd, Speed, line):
     motor_r.run(Speed)
     wait(200)
 
-def PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move):
+def PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move): #Езда до Х-образной линии с проездом вперед и остановкой после
     PD_line_X(Kp, Kd, Speed, line)
     motor_l.run_angle(-1 * Speed_t, move, wait=False)
     motor_r.run_angle(Speed_t, move)
     motor_l.stop()
     motor_r.stop()
 
-def PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move):
+def PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move): #Езда до Т-образной линии с проездом вперед и остановкой после
     PD_line_T(Kp, Kd, Speed, line)
     motor_l.run_angle(-1 * Speed_t, move, wait=False)
     motor_r.run_angle(Speed_t, move)
     motor_l.stop()
     motor_r.stop()
 
-def PD_line_l_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+def PD_line_l_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t): #Поворот до линии на лево на Т-образном перекрёстке
     PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(Speed_t, move_t, then=Stop.COAST)
@@ -91,7 +97,7 @@ def PD_line_l_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, c
     motor_l.hold()
     motor_r.hold()
 
-def PD_line_l_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+def PD_line_l_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t): #Поворот до линии на лево на Х-образном перекрёстке
     PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(Speed_t, move_t, then=Stop.COAST)
@@ -106,7 +112,7 @@ def PD_line_l_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, c
     motor_l.hold()
     motor_r.hold()
 
-def PD_line_r_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+def PD_line_r_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t): #Поворот до линии на право на Т-образном перекрёстке
     PD_line_f_x(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(-1 * Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(-1 * Speed_t, move_t, then=Stop.COAST)
@@ -121,7 +127,7 @@ def PD_line_r_x(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, c
     motor_l.hold()
     motor_r.hold() 
 
-def PD_line_r_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t):
+def PD_line_r_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, correct_t): #Поворот до линии на право на Х-образном перекрёстке
     PD_line_f_t(Kp, Kd, Speed, Speed_t, line, move_f)
     motor_l.run_angle(-1 * Speed_t, move_t, then=Stop.COAST, wait=False)
     motor_r.run_angle(-1 * Speed_t, move_t, then=Stop.COAST)
@@ -136,7 +142,11 @@ def PD_line_r_t(Kp, Kd, Speed, Speed_t, line, line_m, move_f, move_t, correct, c
     motor_l.hold()
     motor_r.hold()  
 
-def Move(Speedl, Speedr, anglel, angler):
+def Move(Speedl, Speedr, anglel, angler): #Движение обоими моторами на определёный угол одновременно и без остановки после
+    #Функция была дабавлена, чтобы исключить такие моменты, когда забываешь, что: 
+    #1. Для езды вперед/назад на 1 мотор подаётся инвертированная мощьность;
+    #2. Для одновременной работы моторов необходимо прописывать в одном из них дополнительный параметр;
+    #3. Для езды по градусам без остановки, необходимо прибегать к небольшим хитростям.
     motor_l.reset_angle(0)
     motor_r.reset_angle(0)
     flag_r = 1
@@ -149,6 +159,50 @@ def Move(Speedl, Speedr, anglel, angler):
         motor_l.run(-1*Speedl*flag_l)
         motor_r.run(Speedr*flag_r)
 
+def Colr(): #СЧИТЫВАНИЕ цветов
+    global left_array
+    global right_array
+    left_array = []
+    right_array = []
+    while True:
+        #Пока цикл работает - списки заполняются
+        left_array.append(hitech_l.read('COLOR'))
+        right_array.append(hitech_r.read('COLOR'))
+        if Thread_ == True:
+            break
+
+def logik(): #Определение направления 
+    l_white = None
+    l_green = 0
+    r_white = None
+    r_green = 0 
+    #Нахождение длины зелёного и белого промежутка СЛЕВА
+    left_array.sort()
+    len_left_g = len(left_array[left_array.index(3) : (left_array.index(5) + left_array.count(5))]) 
+    len_left_w = len(left_array[left_array.index(11) : len(left_array)])
+    #Если длина зелёного больше белого, то это зелёный кубик СЛЕВА
+    #Иначе наоборот
+    if len_left_g > len_left_w:
+        #GREEN LEFT
+        l_white = 0
+    else:
+        #WHITE LEFT
+        l_white = 2
+    
+    #Нахождение длины зелёного и белого промежутка СПРАВА
+    right_array.sort()
+    len_right_g = len(right_array[right_array.index(3) : (right_array.index(5) + right_array.count(5))]) 
+    len_right_w = len(right_array[right_array.index(11) : len(right_array)])
+    #Если длина зелёного больше белого, то это зелёный кубик СПРАВА
+    #Иначе наоборот
+    if len_right_g > len_right_w:
+        #GREEN RIGHT
+        r_white = 0
+    else:
+        #WHITE RIGHT
+        r_white = 1
+    
+    sum_ = r_green + l_green + r_white + l_white #Направления: 0, 1, 2 или 3
 
 #PD_line_l(2, 1.2, 400, 350, 27, 30, 105, 150, 50, -50)
 
@@ -156,7 +210,7 @@ def Move(Speedl, Speedr, anglel, angler):
 #(1.7, 1.2, 400, 0, 0) - normal speed
 
 #Начало программы
-#Поднятие мотора и поворот на 45
+#Поворот манипулятора и поворот на 45
 motor_m.run_target(400, 90, wait=False)
 Move(400, 400, 270, 40)
 Move(400, 400, 120, 120)
@@ -186,43 +240,16 @@ PD_time(2, 1.2, 400, 0.5)
 ev3.speaker.beep()
 PD_line_r_x(2, 1.2, 400, 300, 35, 20, 125, 110, 40, -50)    #Саша, есть предположение, что я переборщил с количеством параметров...
 
-"""
-Move(-300, -300, 90, 90)
-Move(200, -200, 205, 205)
-motor_r.stop()
-motor_l.stop()
-motor_r.run_angle(-300, 290)
-motor_l.run_angle(300, 240)
-motor_b.run_time(960, 300)
-motor_m.run_angle(-150, 30)
-Move(-150, -150, 120, 120) #Отъезд назад при взятии бутылки
-motor_r.stop()
-motor_l.stop()
-Move(35, 100, 105, 300)
-motor_r.stop()
-motor_l.stop()
-
-motor_m.run_angle(150, 30)
-motor_b.run_time(-960, 500)
-Move(300,-300, 70, 70)
-motor_r.stop()
-motor_l.stop()
-motor_b.stop()
-motor_m.run_angle(-150, 18)
-Move(0, 300, 0, 300)
-"""
-"""
+#Запускается параллельное считывание цветов
+th = threading.Thread(target=Colr)
+th.start()
+PD_time(2, 1.2, 400, 3) #ПРИМЕРНОЕ ЗНАЧЕНИЕ
+Thread_ = True
+#Останавливается считывание
+logik() #Определяется направление
 
 
-Move(260, 240, 300, 300)
-motor_l.hold()
-motor_r.hold()
-motor_b.run_time(-960, 1000)
-Move(-400, -400, 170, 170)
-Move(0, -240, 0, 260)
-motor_b.run_time(300, 260)
-Move(240, 240, 300, 300)
-"""
+
 
 """
 ev3.speaker.beep()
