@@ -176,10 +176,26 @@ def logik(): #Определение направления
     l_green = 0
     r_white = None
     r_green = 0 
+    min_g = 100
+    max_g = 0
+    min_w = 100
+
+    #Нахождение крайних точек зелёного и белого кубиков
+    for i in range(len(left_array)):
+        if 3 <= left_array[i] <= 5:
+            if left_array[i] < min_g:
+                min_g = left_array[i]
+            if left_array[i] > max_g:
+                max_g = left_array[i]
+        
+        if 11 <= left_array[i]:
+            if left_array[i] < min_w:
+                min_w = left_array[i]
+
     #Нахождение длины зелёного и белого промежутка СЛЕВА
     left_array.sort()
-    len_left_g = len(left_array[left_array.index(3) : (left_array.index(5) + left_array.count(5))]) 
-    len_left_w = len(left_array[left_array.index(11) : len(left_array)])
+    len_left_g = len(left_array[left_array.index(min_g) : (left_array.index(max_g) + left_array.count(max_g))]) 
+    len_left_w = len(left_array[left_array.index(min_w) : len(left_array)])
     #Если длина зелёного больше белого, то это зелёный кубик СЛЕВА
     #Иначе наоборот
     if len_left_g > len_left_w:
@@ -189,10 +205,26 @@ def logik(): #Определение направления
         #WHITE LEFT
         l_white = 2
     
+    min_g = 100
+    max_g = 0
+    min_w = 100
+
+    #Нахождение крайних точек зелёного и белого кубиков
+    for i in range(len(right_array)):
+        if 3 <= right_array[i] <= 5:
+            if right_array[i] < min_g:
+                min_g = right_array[i]
+            if right_array[i] > max_g:
+                max_g = right_array[i]
+        
+        if 11 <= right_array[i]:
+            if right_array[i] < min_w:
+                min_w = right_array[i]
+
     #Нахождение длины зелёного и белого промежутка СПРАВА
     right_array.sort()
-    len_right_g = len(right_array[right_array.index(3) : (right_array.index(5) + right_array.count(5))]) 
-    len_right_w = len(right_array[right_array.index(11) : len(right_array)])
+    len_right_g = len(right_array[right_array.index(min_g) : (right_array.index(max_g) + right_array.count(max_g))]) 
+    len_right_w = len(right_array[right_array.index(min_w) : len(right_array)])
     #Если длина зелёного больше белого, то это зелёный кубик СПРАВА
     #Иначе наоборот
     if len_right_g > len_right_w:
