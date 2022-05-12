@@ -11,7 +11,7 @@ import time
 
 ev3 = EV3Brick()
 
-#Переменные
+#Переменные и списки
 Err_old = 0             #ПД-регулятор
 timer_ = time.time()    #ПД-регулятор
 left_array = []         #Список обнаруженных цветов ЛЕВЫМ датчиком
@@ -19,6 +19,7 @@ right_array = []        #Список обнаруженных цветов ПР
 sum_ = None             #Направление (Лево или Право)((0, 1, 2 или 3))
 actions = [0, 0]        #Список расположения кубиков (Белый слева, зелёный справа/Зелёный слева, зелёный справа)
 Things = [0, 0, 0]      #Порядок расположения бельевых блоков
+Nul_thing = 0           #Флаг, который коворит о наличии/отсутствии кубика в текущей комнате
 
 color_r = ColorSensor(Port.S3)
 color_l = ColorSensor(Port.S4)
@@ -169,6 +170,107 @@ def Colr(Kp, Kd, Speed, Time_bef, Time_aft): #СЧИТЫВАНИЕ цветов
         left_array.append(hitech_l.read('COLOR')[0])
         right_array.append(hitech_r.read('COLOR')[0])            
 
+def Colr_Thing_r(Time): #Считывание бельевого блока справа
+    ev3.speaker.beep()
+    timing = time.time()
+    while time.time() - timing < Time:
+        right_array.append(hitech_r.read('COLOR')[0])
+        motor_r.run(400)
+        motor_l.run(-400)
+    ev3.speaker.beep()
+    motor_r.stop()
+    motor_l.stop()
+
+    min_y = 100
+    max_y = 0
+    min_r = 100
+    max_r = 0
+    min_b = 100
+
+    #Нахождение крайних точек кубиков
+    for i in range(len(right_array)):
+        if 7 <= right_array[i] <= 9: #Красный
+            if right_array[i] < min_r:
+                min_r = right_array[i]
+            if right_array[i] > max_r:
+                max_r = right_array[i]
+        
+        if 5 <= right_array[i] <= 6: #Жёлтый
+            if right_array[i] < min_y:
+                min_y = right_array[i]
+            if right_array[i] > max_y:
+                max_y = right_array[i]
+
+        if 12 <= right_array[i]:     #Чёрный
+            if right_array[i] < min_b:
+                min_b = right_array[i]
+    
+    right_array.sort()
+    #Нахождение длины кубиков, вообще это все аналогия функции logik, но уже с 3 кубами
+    if (7 <= min_r <= 9) and (7 <= max_r <= 9):
+        len_right_r = len(right_array[right_array.index(min_r) : (right_array.index(max_r) + right_array.count(max_r))]) 
+    else:
+        len_right_r = 0
+    if (5 <= min_y <= 6) and (5 <= max_y <= 6):
+        len_right_y = len(right_array[right_array.index(min_y) : (right_array.index(max_y) + right_array.count(max_y))]) 
+    else:
+        len_right_y = 0
+    if 12 <= min_b <= 17:
+        len_right_b = len(right_array[right_array.index(min_b) : len(right_array)])
+    else:
+        len_right_b = 0
+    
+    if len_right_b == 0 and len_right_r == 0 and len_right_y == 0:
+        #Определение кубика в текущей комнате
+        Nul_thing = 1
+    else:
+        Nul_thing = 0
+        #Черный - 1; красный - 2; желтый - 3
+        if max(len_right_b, len_right_r, len_right_y) == len_right_b:
+            if Things[0] == 0:
+                Things[0] = 1
+            else:
+                if Things[1] == 0:
+                    Things[1] = 1
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 1
+        elif max(len_right_b, len_right_r, len_right_y) == len_right_r:
+            if Things[0] == 0:
+                Things[0] = 2
+            else:
+                if Things[1] == 0:
+                    Things[1] = 2
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 2
+        else:
+            if Things[0] == 0:
+                Things[0] = 3
+            else:
+                if Things[1] == 0:
+                    Things[1] = 3
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 3
+    
+    if Nul_thing == 0:#Проверка наличия кубика в текущей комнате
+        Move(0, -300, 0, 320)
+        motor_r.stop()
+        motor_l.stop()
+        motor_b.run_target(192, motor_b.angle() + 12)
+        motor_m.run_angle(300, 65)
+        motor_b.run_time(-960, 1000, wait=False)
+        Move(350, 350, 130, 130)
+        motor_r.stop()
+        motor_l.stop()
+        motor_b.run_time(960, 1500)
+        motor_b.run_time(-960, 1500)
+        motor_b.hold()
+        wait(5000)
+    else:
+        pass
+
 def logik(): #Обработка цвета и определение направления 
     l_white = None
     l_green = 0
@@ -269,13 +371,39 @@ def White_room_l(): #Дествия для левой белой комнаты
     #
 
 def White_room_r(): #Дествия для правой белой комнаты
-
-    PD_time(2, 1, 350, 0.40)
+    #Проезды ебаные
+    PD_time(2, 1, 350, 0.40)#Подъезд к столику для выставления бутылок
     motor_b.run_time(-960, 2000, wait=False)
     Move(0, 300, 0, 220)
     motor_r.stop()
     motor_l.stop()
-    motor_b.run_time(-900, 10000)
+    motor_b.brake()
+    Move(-300, -300, 90, 90)
+    motor_r.stop()
+    motor_l.stop()
+    motor_b.run_time(-960, 500)
+    Move(-300, -300, 100, 100)
+    while color_l.reflection() >= 35:
+        motor_r.run(350)
+        motor_l.run(-350)
+    motor_r.stop()
+    motor_l.stop()
+    Move(400, 0, 140, 0)
+    global Err_old
+    while color_r.reflection() >= 25:
+        Err = 50 - color_l.reflection()
+        motor_l.run(-1 * (300 + (3 * Err + 2 * (Err - Err_old))))
+        motor_r.run(300 - (3 * Err + 2 * (Err - Err_old)))
+        Err_old = Err
+        wait(50)
+    ev3.speaker.beep()
+    motor_r.stop()
+    motor_l.stop()
+    #Доехали до кубика
+    Colr_Thing_r(0.35)
+    print(Things)
+    print(right_array)
+    #
     #Как зелёная комната, но белая
     #
 
@@ -294,7 +422,7 @@ def Action(): #Выполнение действий, основываясь н�
             White_room_r()
         #Вторую комнату завершили
     else:
-        PD_line_r_x(2, 1.2, 400, 300, 30, 20, 135, 110, 40, -150) #ПРИМЕРНОЕ ЗНАЧЕНИЕ
+        PD_line_r_x(2, 1.2, 400, 300, 30, 20, 125, 110, 40, -150) #ПРИМЕРНОЕ ЗНАЧЕНИЕ
         #Проверяем правую сторону, так как едем направо
         if actions[1] == 0:     #Комната зелёного цвета?
             Green_room_r()
@@ -354,6 +482,12 @@ print(left_array)
 ev3.speaker.beep()
 #Останавливается считывание
 logik() #Определяется направление
+
+#sum_ = 1
+#actions = [0, 1]
+#motor_b.run_time(-960, 1000)
+right_array = []
+left_array = []
 Action() #Действия!
 print(sum_)
 print(actions)
