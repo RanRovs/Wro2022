@@ -264,15 +264,9 @@ def Colr_Thing_r(Time): #Считывание бельевого блока сп
         Move(350, 350, 130, 130)
         motor_r.stop()
         motor_l.stop()
-        motor_b.run_time(960, 900)
+        motor_b.run_time(960, 1000)
+        motor_b.stop()
         motor_m.run_target(-300, 90)
-        motor_b.run_time(-960, 1000)
-        motor_b.hold()
-        Move(350, -350, 340, 340)
-        PD_line_X(4, 3, 400, 30)
-        motor_l.stop()
-        motor_r.stop()
-        wait(5000)
     else:
         pass
 
@@ -406,6 +400,20 @@ def White_room_r(): #Дествия для правой белой комнат�
     motor_l.stop()
     #Доехали до кубика
     Colr_Thing_r(0.35)
+    if Nul_thing == 0:
+        motor_b.run_time(-960, 1000)
+        motor_b.hold()
+        Move(350, -350, 460, 460)
+        Move(40, 350, 40, 200)
+        PD_line_X(4, 3, 400, 30)
+        motor_l.stop()
+        motor_r.stop()
+    else:
+        Move(350, -350, 525, 525)
+        Move(100, 100, 60, 60)
+        PD_line_X(4, 3, 400, 30)
+        motor_l.stop()
+        motor_r.stop()
     print(Things)
     print(right_array)
     #
@@ -456,22 +464,22 @@ motor_m.hold()
 #Начинается взятие бутылок
 
 motor_m.run_target(300, 90, wait=False)
-PD_time(2, 1.2, 350, 0.74)#Проезд до первой банки
+PD_time(4, 3, 400, 0.7)#Проезд до первой банки
 motor_r.stop()
 motor_l.stop()
 motor_b.run_time(-400, 1000)
-Move(-400, -400, 150, 150)#Отъезд назад после взятия
+Move(-400, -400, 170, 170)#Отъезд назад после взятия
 #Первая бутылка
 motor_r.hold()
 motor_l.hold()
-Move(250, -250, 55, 55)#Поворот до второй банки
+Move(250, -250, 50, 50)#Поворот до второй банки
 motor_r.hold()
 motor_l.hold()
 motor_b.run_target(200, 1)
 Move(400, 400, 300, 300)#Проезд до второй банки
 motor_r.stop()
 motor_l.stop()
-motor_b.run_time(-400, 1000)
+motor_b.run_time(-100, 1500)
 Move(300, 0, 360, 0)
 #Бутылки взяты
 
@@ -483,7 +491,7 @@ PD_line_l_x(2, 1.2, 400, 300, 30, 20, 125, 110, 40, -150)
 #Запускается параллельное считывание цветов
 left_array = []
 right_array = []
-Colr(2, 1.2, 400, 0.9, 0.5)
+Colr(2, 1.2, 400, 0.9, 0.6)
 print(right_array)
 print("Ebat")
 print(left_array)
