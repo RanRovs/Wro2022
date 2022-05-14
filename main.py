@@ -270,6 +270,106 @@ def Colr_Thing_r(Time): #Считывание бельевого блока сп
     else:
         pass
 
+def Colr_Thing_l(Time): #Считывание бельевого блока справа
+    ev3.speaker.beep()
+    timing = time.time()
+    while time.time() - timing < Time:
+        left_array.append(hitech_l.read('COLOR')[0])
+        motor_r.run(400)
+        motor_l.run(-400)
+    ev3.speaker.beep()
+    motor_r.stop()
+    motor_l.stop()
+
+    min_y = 100
+    max_y = 0
+    min_r = 100
+    max_r = 0
+    min_b = 100
+
+    #Нахождение крайних точек кубиков
+    for i in range(len(left_array)):
+        if 7 <= left_array[i] <= 9: #Красный
+            if left_array[i] < min_r:
+                min_r = left_array[i]
+            if left_array[i] > max_r:
+                max_r = left_array[i]
+        
+        if 5 <= left_array[i] <= 6: #Жёлтый
+            if left_array[i] < min_y:
+                min_y = left_array[i]
+            if left_array[i] > max_y:
+                max_y = left_array[i]
+
+        if 12 <= left_array[i]:     #Чёрный
+            if left_array[i] < min_b:
+                min_b = left_array[i]
+    
+    left_array.sort()
+    #Нахождение длины кубиков, вообще это все аналогия функции logik, но уже с 3 кубами
+    if (7 <= min_r <= 9) and (7 <= max_r <= 9):
+        len_right_r = len(left_array[left_array.index(min_r) : (left_array.index(max_r) + left_array.count(max_r))]) 
+    else:
+        len_right_r = 0
+    if (5 <= min_y <= 6) and (5 <= max_y <= 6):
+        len_right_y = len(left_array[left_array.index(min_y) : (left_array.index(max_y) + left_array.count(max_y))]) 
+    else:
+        len_right_y = 0
+    if 12 <= min_b <= 17:
+        len_right_b = len(left_array[left_array.index(min_b) : len(left_array)])
+    else:
+        len_right_b = 0
+    
+    if len_right_b == 0 and len_right_r == 0 and len_right_y == 0:
+        #Определение кубика в текущей комнате
+        Nul_thing = 1
+    else:
+        Nul_thing = 0
+        #Черный - 1; красный - 2; желтый - 3
+        if max(len_right_b, len_right_r, len_right_y) == len_right_b:
+            if Things[0] == 0:
+                Things[0] = 1
+            else:
+                if Things[1] == 0:
+                    Things[1] = 1
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 1
+        elif max(len_right_b, len_right_r, len_right_y) == len_right_r:
+            if Things[0] == 0:
+                Things[0] = 2
+            else:
+                if Things[1] == 0:
+                    Things[1] = 2
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 2
+        else:
+            if Things[0] == 0:
+                Things[0] = 3
+            else:
+                if Things[1] == 0:
+                    Things[1] = 3
+                else:
+                    if Things[2] == 0:
+                        Things[2] = 3
+    
+    if Nul_thing == 0:#Проверка наличия кубика в текущей комнате
+        Move(-300, 0, 320, 0)
+        motor_r.stop()
+        motor_l.stop()
+        motor_b.run_target(192, motor_b.angle() + 12)
+        motor_m.run_angle(300, 65)
+        motor_b.run_time(-960, 1000, wait=False)
+        Move(350, 350, 130, 130)
+        motor_r.stop()
+        motor_l.stop()
+        motor_b.run_time(960, 1000)
+        motor_b.stop()
+        motor_m.run_target(-300, 90)
+    else:
+        pass
+
 def logik(): #Обработка цвета и определение направления 
     l_white = None
     l_green = 0
@@ -356,6 +456,18 @@ def logik(): #Обработка цвета и определение напра
 
 def Green_room_l(): #Дествия для левой зелёной комнаты
     pass
+    Move(0, 400, 0, 135)
+    motor_l.stop()
+    motor_r.stop()
+    global Err_old
+    while color_l.reflection() >= 49:
+        Err = 50 - color_r.reflection()
+        motor_l.run(-1 * (300 - (3 * Err + 2 * (Err - Err_old))))
+        motor_r.run(300 + (3 * Err + 2 * (Err - Err_old)))
+        Err_old = Err
+        wait(50)
+    ev3.speaker.beep()
+    Colr_Thing_l(0.35)
     #Здесь будет большое кол-во проездов
     #Проезд до бельевого блока
 
@@ -499,8 +611,8 @@ ev3.speaker.beep()
 #Останавливается считывание
 logik() #Определяется направление
 
-#sum_ = 1
-#actions = [0, 1]
+#sum_ = 0
+#actions = [0, 0]
 #motor_b.run_time(-960, 1000)
 right_array = []
 left_array = []
