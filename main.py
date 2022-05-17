@@ -621,7 +621,7 @@ motor_m.hold()
 #Начинается взятие бутылок
 
 motor_m.run_target(300, 90, wait=False)
-PD_time(5, 4, 300, 1)#Проезд до первой банки
+PD_time(3, 2, 300, 1)#Проезд до первой банки
 motor_r.stop()
 motor_l.stop()
 motor_b.run_time(-200, 900)
@@ -665,6 +665,17 @@ print(sum_)
 print(actions)
 Action() #Действия!
 PD_line_f_x(2, 1.2, 600, 350, 35, 20)
+Move(0, 400, 0, 150)
+while color_l.reflection() >= 30:
+    Err = 40 - color_r.reflection()
+    motor_l.run(-1 * (300 - (3 * Err + 3 * (Err - Err_old))))
+    motor_r.run(300 + (3 * Err + 3 * (Err - Err_old)))
+    Err_old = Err
+    wait(50)
+ev3.speaker.beep()
+
+motor_r.stop()
+motor_l.stop()
 
 
 #После этой функции мы сделали задачи в двух комнатах. Остаются остальные две, но они буду выполняться абсолютно идентично предыдущим
